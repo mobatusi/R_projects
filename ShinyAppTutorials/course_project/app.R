@@ -21,24 +21,33 @@
 ###
 
 library(shiny)
+library(ggplot2)
+library(DT)
 
-ui <- navbarPage("The Mining Stock Scale",
-  tabPanel("Adjusting Your Mining Stocks", 
+ui <- navbarPage(strong("The Mining Stock Scale"),theme = shinytheme("yeti"),
+                 tabPanel("Adjusting Your Mining Stocks", 
            tags$img(src="logo.png", width ="100px", height = "100px")),
-  
-  tabPanel("Documentation",
-           includeText("documentation.pdf")),
-  
-  tabPanel("Data Table With the Underlying Data", 
-           tags$video(src="WestWave-EEG.mp4", type = "video/mp4", controls = T,
-                      width ="900px", height = "800px"))
+           
+           tabPanel("Documentation"),
+           
+           tabPanel("Data Table With the Underlying Data", 
+                    DT::dataTableOutput("table"))
 
-  
+          
 )
 
 server <- function(input, output, session) {
-  data = read.csv(file = "course-proj-data.csv", sep = ",", header = TRUE)
+  data <- read.csv("course-proj-data.csv", sep=";")
+  
+  output$table <- DT::renderDataTable(datatable( data, options = list(paging=F), rownames = F, 
+                                      filter='top') %>%
+                                        formatCurrency("MarketCap.in.M", "$") %>%
+                                        formatStyle("G1", backgroundColor = "lightblue")  %>%
+                                        formatStyle("G2", backgroundColor = "lightblue")  %>%
+                                        formatStyle("G3", backgroundColor = "lightblue")
+                                      )
   
 }
+
 
 shinyApp(ui, server)
