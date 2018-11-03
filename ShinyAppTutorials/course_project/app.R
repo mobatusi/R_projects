@@ -25,8 +25,19 @@ library(ggplot2)
 library(DT)
 library(shinythemes)
 ui <- navbarPage(strong("The Mining Stock Scale"),theme = shinytheme("yeti"),
-                 tabPanel("Adjusting Your Mining Stocks", 
-           tags$img(src="logo.png", width ="100px", height = "100px")),
+           tabPanel("Adjusting Your Mining Stocks",
+                    sliderInput(inputId = "G1slider",
+                                label = "G1",
+                                value = 1, min = 0 , max = 9),
+                    sliderInput(inputId = "G2slider",
+                                label = "G2",
+                                value = 1, min = 0 , max = 8),
+                    sliderInput(inputId = "G3slider",
+                                label = "G3",
+                                value = 1, min = 0 , max = 10),
+                    plotOutput("plot"),
+                    DT::dataTableOutput("table")
+                    ),
            
            tabPanel("Documentation"),
            
@@ -37,7 +48,12 @@ ui <- navbarPage(strong("The Mining Stock Scale"),theme = shinytheme("yeti"),
 )
 
 server <- function(input, output, session) {
-  data <- read.csv("course-proj-data.csv", sep=";")
+  data <- reactive({read.csv("course-proj-data.csv", sep=";")})
+  
+  data2 <- reactive({rnorm(50)*input$G1slider})
+  
+  output$plot <- renderPlot({plot(data2(), col = "red", pch = 21, bty = "n")})
+  
   
   output$table <- DT::renderDataTable(datatable( data, options = list(paging=F), rownames = F, 
                                       filter='top') %>%
