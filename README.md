@@ -6,3 +6,5 @@ projects that I am working on in R
 - shiby
 - ggplot2
 - DT
+- shinythemes
+

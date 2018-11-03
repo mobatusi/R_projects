@@ -23,7 +23,7 @@
 library(shiny)
 library(ggplot2)
 library(DT)
-
+library(shinythemes)
 ui <- navbarPage(strong("The Mining Stock Scale"),theme = shinytheme("yeti"),
                  tabPanel("Adjusting Your Mining Stocks", 
            tags$img(src="logo.png", width ="100px", height = "100px")),
