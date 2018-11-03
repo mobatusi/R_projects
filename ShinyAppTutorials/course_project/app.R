@@ -25,43 +25,62 @@ library(ggplot2)
 library(DT)
 library(shinythemes)
 ui <- navbarPage(strong("The Mining Stock Scale"),theme = shinytheme("yeti"),
-           tabPanel("Adjusting Your Mining Stocks",
+           wellPanel(
                     sliderInput(inputId = "G1slider",
-                                label = "G1",
-                                value = 1, min = 0 , max = 9),
+                                label = "Weight on Grade 1",
+                                value = 1, min = 0 , max = 20),
                     sliderInput(inputId = "G2slider",
-                                label = "G2",
-                                value = 1, min = 0 , max = 8),
+                                label = "Weight on Grade 2",
+                                value = 1, min = 0 , max = 20),
                     sliderInput(inputId = "G3slider",
-                                label = "G3",
-                                value = 1, min = 0 , max = 10),
-                    plotOutput("plot"),
-                    DT::dataTableOutput("table")
+                                label = "Weight on Grade 3",
+                                value = 1, min = 0 , max = 6),
+                    plotOutput("plot",brush = "user_brush"),
+                    dataTableOutput("table")
                     ),
            
-           tabPanel("Documentation"),
+           tabPanel("Documentation",
+                    tabPanel("Video guide to Shiny App, Iframe",
+                             tags$iframe(style="height:600px; width:100%; scrolling=yes", 
+                                         src="https://youtu.be/Gyrfsrd4zK0"))),
            
            tabPanel("Data Table With the Underlying Data", 
-                    DT::dataTableOutput("table"))
+                    DT::dataTableOutput("tableOrig"))
 
           
 )
 
 server <- function(input, output, session) {
-  data <- reactive({read.csv("course-proj-data.csv", sep=";")})
+  library(ggplot2) # for the diamonds dataset, and ggplot feature
+  library(DT) # for the dataTableOutput
+  library(shiny) # should always be activated
+  data <- read.csv("course-proj-data.csv", sep=";")
   
-  data2 <- reactive({rnorm(50)*input$G1slider})
+  score <- reactive({(data['G1']*input$G1slider) + (data['G2']*input$G2slider) + (data['G3']*input$G3slider)
+    })
   
-  output$plot <- renderPlot({plot(data2(), col = "red", pch = 21, bty = "n")})
+  output$plot <- renderPlot({
+    ggplot(data, aes(G1, G2)) + geom_point()
+    })
+
+  diam <- reactive({
+    
+    user_brush <- input$user_brush
+    sel <- brushedPoints(data, user_brush)
+    return(sel)
+    
+  })
   
+  output$table <- DT::renderDataTable({datatable(diam())
+    })
   
-  output$table <- DT::renderDataTable(datatable( data, options = list(paging=F), rownames = F, 
+  output$tableOrig <- DT::renderDataTable({datatable(data, options = list(paging=F), rownames = F, 
                                       filter='top') %>%
                                         formatCurrency("MarketCap.in.M", "$") %>%
                                         formatStyle("G1", backgroundColor = "lightblue")  %>%
                                         formatStyle("G2", backgroundColor = "lightblue")  %>%
                                         formatStyle("G3", backgroundColor = "lightblue")
-                                      )
+                                      })
   
 }
 
