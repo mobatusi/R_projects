@@ -24,8 +24,10 @@ library(shiny)
 library(ggplot2)
 library(DT)
 library(shinythemes)
+
 ui <- navbarPage(strong("The Mining Stock Scale"),theme = shinytheme("yeti"),
-           wellPanel(
+           tabPanel("Adjust your Mining stocks",
+             wellPanel(
                     sliderInput(inputId = "G1slider",
                                 label = "Weight on Grade 1",
                                 value = 1, min = 0 , max = 20),
@@ -34,10 +36,12 @@ ui <- navbarPage(strong("The Mining Stock Scale"),theme = shinytheme("yeti"),
                                 value = 1, min = 0 , max = 20),
                     sliderInput(inputId = "G3slider",
                                 label = "Weight on Grade 3",
-                                value = 1, min = 0 , max = 6),
-                    plotOutput("plot",brush = "user_brush"),
-                    dataTableOutput("table")
+                                value = 1, min = 0 , max = 6)
                     ),
+                    plotOutput("plot", brush = "user_brush"),
+                    dataTableOutput("table"),
+                    downloadButton(outputId = "downlaod", label="Download Table")
+             ),
            
            tabPanel("Documentation",
                     tabPanel("Video guide to Shiny App, Iframe",
@@ -54,15 +58,23 @@ server <- function(input, output, session) {
   library(ggplot2) # for the diamonds dataset, and ggplot feature
   library(DT) # for the dataTableOutput
   library(shiny) # should always be activated
+  library(dplyr)
+  library(readr)
+  
+  #values <- reactiveValues()
+  
   data <- read.csv("course-proj-data.csv", sep=";")
   
-  score <- reactive({(data['G1']*input$G1slider) + (data['G2']*input$G2slider) + (data['G3']*input$G3slider)
-    })
+  datascore <- reactive({ (data['G1']*input$G1slider) + (data['G2']*input$G2slider) + (datascore['G3']*input$G3slider)
+  })
   
-  output$plot <- renderPlot({
-    ggplot(data, aes(G1, G2)) + geom_point()
-    })
+  #datascore <- reactive(values$data['score'] <- score )
 
+  output$plot <- renderPlot({
+    ggplot(data, aes(G2,MarketCap.in.M) ) + stat_summary(fun.data=mean_cl_normal) + 
+      geom_smooth(method='lm',formula=y~x) + geom_point()
+  })
+  
   diam <- reactive({
     
     user_brush <- input$user_brush
@@ -74,7 +86,7 @@ server <- function(input, output, session) {
   output$table <- DT::renderDataTable({datatable(diam())
     })
   
-  output$tableOrig <- DT::renderDataTable({datatable(data, options = list(paging=F), rownames = F, 
+  output$tableOrig <- DT::renderDataTable({datatable(data , options = list(paging=F), rownames = F, 
                                       filter='top') %>%
                                         formatCurrency("MarketCap.in.M", "$") %>%
                                         formatStyle("G1", backgroundColor = "lightblue")  %>%
@@ -82,7 +94,14 @@ server <- function(input, output, session) {
                                         formatStyle("G3", backgroundColor = "lightblue")
                                       })
   
+  output$download <- downloadHandler(
+    filename = "project_downlaod.csv",
+    content = function(file) {
+      write.csv(diam(), file)
+    }
+  )
+  
 }
 
 
-shinyApp(ui, server)
+shinyApp(ui = ui, server = server)
